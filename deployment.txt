@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hrhyv2-postgres-deploy
+  namespace: dev
+  labels:
+    service: hrhyv2-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: hrhyv2-postgres
+  template:
+    metadata:
+      labels:
+        service: hrhyv2-postgres
+    spec:
+      containers:
+      - name: hrhyv2-postgres
+        image: postgres:14
+        ports:
+          - containerPort: 5432
+        env:
+        - name: POSTGRES_USER # 커스텀된 DB 이미지가 아니라 기본 postgresql 이미지를 사용했기 때문에 그 이미지에 지정된 환경변수를 사용해 주어야 함.
+          valueFrom:
+            secretKeyRef:
+              name: hrhyv2-postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hrhyv2-postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: hrhyv2-postgres-secret
+              key: POSTGRES_DB
+        volumeMounts:
+        - name: hrhyv2-persistent-volume
+          mountPath: /var/lib/postgres/data
+      volumes:
+      - name: hrhyv2-persistent-volume
+        persistentVolumeClaim:
+          claimName: hrhyv2-persistent-volume-claim
